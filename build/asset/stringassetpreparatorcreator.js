@@ -66,15 +66,7 @@ function createStringAssetPreparator (lib, Node) {
       if (this.destpath.length>0) {
         this.destpath[0] = this.firstDestPathSegment();
       }
-      return {
-        component: this.componentName,
-        src_path: Path.join.apply(Path, this.walkpath),
-        dest_path: Path.join.apply(Path, this.destpath),
-        module_path: Path.join.apply(Path, this.modulepath),
-        module_dist_path: this.moduleDistPath(),
-        protoboard: this.protoboard,
-        resolved: true
-      }
+      return this.returnAndDie();
     }
     return this.go();
   };
@@ -159,6 +151,27 @@ function createStringAssetPreparator (lib, Node) {
     mdp = this.moduledistpath.slice();
     mdp[0] = this.firstDestPathSegment();
     return Path.join.apply(Path, mdp);
+  };
+  StringAssetPreparator.prototype.returnAndDie = function () {
+    var myret = {
+      component: this.componentName,
+      src_path: Path.join.apply(Path, this.walkpath),
+      dest_path: Path.join.apply(Path, this.destpath),
+      module_path: Path.join.apply(Path, this.modulepath),
+      module_dist_path: this.moduleDistPath(),
+      protoboard: this.protoboard,
+      resolved: true
+    }, ret = [];
+    if (this.protoboard && this.protoboard.dependencies) {
+      this.protoboard.dependencies.reduce(this.digDependency.bind(this), ret);
+    };
+    this.destroy();
+    ret.push(myret);
+    return ret;
+  };
+  StringAssetPreparator.prototype.digDependency = function (result, dep) {
+    Array.prototype.push.apply(result, (new StringAssetPreparator(this.reader, dep, this.rootIfNoComponent)).go());
+    return result;
   };
 
 

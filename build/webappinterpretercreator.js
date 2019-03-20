@@ -196,7 +196,7 @@ function createPBWebAppInterpreter (Lib, Node) {
     }
 
     tasklist.push ('exec:clean');
-    console.log(require('util').inspect(config, {depth:8, colors:true}));
+    //console.log(require('util').inspect(config, {depth:8, colors:true}));
     grunt.initConfig(config);
     grunt.registerTask('default', tasklist);
     return Lib.q(true);
@@ -229,8 +229,7 @@ function createPBWebAppInterpreter (Lib, Node) {
     return ret;
   };
   PBWebAppInterpreter.prototype._decideComponentsLink = function (ret,item) {
-    console.log('_decideComponentsLink?', item);
-    //console.log('_decideComponentsLink?', require('util').inspect(item, {depth:7}));
+    //console.log('_decideComponentsLink?', require('util').inspect(item, {depth:7, colors:true}));
     if (item.protoboard && item.protoboard.copy) {
       Lib.traverseShallow(item.protoboard.copy, copyitempusher.bind(null, true, ret, this.cwd, item.path))
     }

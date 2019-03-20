@@ -220,14 +220,42 @@ function createPBWebAppReader (Lib, Node, globalutil) {
 
   PBWebAppReader.prototype._process_page = function (p_data, name){
     if (this.pages[name]) throw new Error('Duplicate page declaration '+name);
+    this._processAssets('js', p_data, name);
+    this._processAssets('css', p_data, name);
+    //p_data.js = this.resolveReferences(p_data.js, name).reduce(this._processAsset.bind(this, 'js'), []);
+    //p_data.css = this.resolveReferences(p_data.css, name).reduce(this._processAsset.bind(this, 'css'), []);
+    return this.onJSCSS(p_data, name);
+    /*
     return this.onJSCSS(p_data, name, [
       this.resolveReferences(p_data.js, name).map(this._processAsset.bind(this, 'js')),
       this.resolveReferences(p_data.css, name).map(this._processAsset.bind(this, 'css'))
     ]);
+    */
   };
 
-  PBWebAppReader.prototype.onJSCSS = function (p_data, name, jscss) {
-    var js = jscss[0], css = jscss[1];
+  PBWebAppReader.prototype._processAssets = function (field, p_data, name) {
+    p_data[field] = clearDuplicates(this.resolveReferences(p_data[field], name).reduce(this._processAsset.bind(this, field), []));
+  };
+
+  function hasComponent (orig, comp) {
+    return Lib.isEqual(orig, comp);
+  }
+  function clearDuplicates (arry) {
+    var ret = [], _r = ret;
+    arry.forEach(function (item) {
+      if (!_r.some(hasComponent.bind(null, item))){
+        _r.push(item);
+      }
+      item = null;
+    });
+    _r = null;
+    return ret;
+  }
+
+  PBWebAppReader.prototype.onJSCSS = function (p_data, name) {
+    //var js = jscss[0], css = jscss[1];
+    var js = p_data.js, css = p_data.css;
+    //console.log('js', js);
     if (!Lib.isArray(js)) {
       console.error('no js', jscss);
       process.exit(1);
@@ -302,13 +330,25 @@ function createPBWebAppReader (Lib, Node, globalutil) {
     return this._processAsset(root_if_no_component, record);
   };
 
-  PBWebAppReader.prototype._processAsset = function (root_if_no_component, record) {
+  PBWebAppReader.prototype.conditionalAddToComponent = function (record) {
+    if (record.component) {
+      this.components.addToComponent(record);
+    }
+  };
+  PBWebAppReader.prototype._processAsset = function (root_if_no_component, result, record) {
+    var ret = this.assets.processAsset(root_if_no_component, record);
+    //console.log('record', record, '=>', ret);
+    ret.forEach(this.conditionalAddToComponent.bind(this));
+    Array.prototype.push.apply(result, ret);
+    return result;
+    /*
     var ret = this.assets.processAsset(root_if_no_component, record);
     //console.log('_processAsset', record, '=>', ret);
     if (ret.component) {
       this.components.addToComponent(ret);
     }
     return ret;
+    */
   };
 
   PBWebAppReader.prototype.onSrcPathForPrepareAsset = function (root_if_no_component, ret, src_path) {

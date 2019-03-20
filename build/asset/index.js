@@ -63,23 +63,30 @@ function createAssetHandling (lib, Node, globalutil) {
       ret.conditional = record.conditional;
       //console.log('_prepareAsset string', ret);
 
-      return this.handleAssetFound(ret);
+      return this.handleAssetsFound([ret]);
     }else{
       return this.prepareStringAsset(root_if_no_component, record, ret);
     }
   }
   Assets.prototype.prepareStringAsset = function (root_if_no_component, assetstring) {
+    /*
     var ap = new StringAssetPreparator(this.reader, assetstring, root_if_no_component),
       ret = ap.go();
     ap.destroy();
-    return this.handleAssetFound(ret);
+    return this.handleAssetsFound(ret);
+    */
+    return this.handleAssetsFound((new StringAssetPreparator(this.reader, assetstring, root_if_no_component)).go());
+  };
+
+  Assets.prototype.handleAssetsFound = function (assets) {
+    assets.forEach(this.handleAssetFound.bind(this));
+    return assets;
   };
 
   Assets.prototype.handleAssetFound = function (asset) {
     if (asset.component) {
       this.reader._requireComponent(asset.component);
     }
-    return asset;
   };
 
   return Assets;
