@@ -1,0 +1,30 @@
+{
+  "name": "allex_gruntwebappbuildersdklib",
+  "version": "1.0.0",
+  "description": "AllexJS lib for allex-webapp-build",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "dependencies": {
+    "allex_nodehelpersserverruntimelib": "1.x",
+    "allexmodulerecognitionsync": "1.x"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/allex-sdk-libs/gruntwebappbuilder.git"
+  },
+  "keywords": [
+    "ecosystem:AllexJS",
+    "sdk",
+    "lib",
+    "webapp",
+    "build"
+  ],
+  "author": "Andrija Petrovic <andrija.hers@gmail.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/allex-sdk-libs/gruntwebappbuilder/issues"
+  },
+  "homepage": "https://github.com/allex-sdk-libs/gruntwebappbuilder#readme"
+}
