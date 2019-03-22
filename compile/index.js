@@ -1,4 +1,4 @@
-function createCompile (Lib, Node, ModuleRecognizerSync) {
+function createCompile (Lib, Node, recognizeModule) {
   'use strict';
   var Path = Node.Path,
     Fs = Node.Fs;
@@ -25,13 +25,7 @@ function createCompile (Lib, Node, ModuleRecognizerSync) {
       }
       return origasset;
     }
-    asset = ModuleRecognizerSync(origasset);
-    if (!Lib.isString(asset)) {
-      if (!asset.modulename) {
-        throw 'After Allex module recognition, the resulting object has to have a modulename';
-      }
-      asset = Path.join('node_modules', asset.modulename, 'dist', 'browserified.js');
-    }
+    asset = recognizeModule(origasset);
     if (Fs.fileExists(Path.resolve(rootdir, assetdir, page_name, asset))) {
       return Path.join(assetdir, page_name, asset);
     }
@@ -90,7 +84,11 @@ function createCompile (Lib, Node, ModuleRecognizerSync) {
     lcss = lcss.map(assetFinder.bind(null, pb_dir, 'css', page_name));
 
     pb_data.pages[page_name].js = (lscripts.concat(allex_data.js.map(assetFinder.bind(null, pb_dir, 'js', page_name)))).concat(lpscripts);
-    pb_data.pages[page_name].css= lcss.concat(allex_data.css.map(assetFinder.bind(null, pb_dir, 'css', page_name)));
+    //pb_data.pages[page_name].css= lcss.concat(allex_data.css.map(assetFinder.bind(null, pb_dir, 'css', page_name)));
+    pb_data.pages[page_name].css= {
+      pre: lcss,
+      post: allex_data.css.map(assetFinder.bind(null, pb_dir, 'css', page_name))
+    };
 
     var layout = pb_data.pages[page_name].layout && pb_data.pages[page_name].layout[variant] ? pb_data.pages[page_name].layout[variant] : 'designer';
 

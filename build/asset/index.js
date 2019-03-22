@@ -1,9 +1,14 @@
-function createAssetHandling (lib, Node, globalutil) {
+function createAssetHandling (lib, Node, util) {
   'use strict';
 
   var Fs = Node.Fs,
     Path = Node.Path,
-    StringAssetPreparator = require('./stringassetpreparatorcreator')(lib, Node);
+    StringAssetPreparator = require('./stringassetpreparatorcreator')(lib, Node),
+    JSStringAssetPreparator = require('./jsstringassetpreparatorcreator')(lib, StringAssetPreparator, stringAssetPreparatorFactory),
+    CSSStringAssetPreparator = require('./cssstringassetpreparatorcreator')(lib, StringAssetPreparator),
+    OriginalPBAssetsProcessorBase = require('./originalpbassetsprocessorbasecreator')(lib),
+    OriginalPBJSAssetsProcessor= require('./originalpbjsassetsprocessorcreator')(lib, OriginalPBAssetsProcessorBase),
+    OriginalPBCSSAssetsProcessor= require('./originalpbcssassetsprocessorcreator')(lib, OriginalPBAssetsProcessorBase);
 
   function Assets (reader) {
     this.reader = reader;
@@ -12,8 +17,16 @@ function createAssetHandling (lib, Node, globalutil) {
     this.reader = null;
   };
 
-  Assets.prototype.processAsset = function (root_if_no_component, record) {
+  Assets.prototype.processOriginalProtoboard = function (protoboard, pagename) {
+    var depcsss = (new OriginalPBJSAssetsProcessor(this, protoboard, pagename).go());
+    (new OriginalPBCSSAssetsProcessor(this, protoboard, pagename, 'pre').go());
+    (new OriginalPBCSSAssetsProcessor(this, protoboard, pagename, 'post').go());
+    protoboard.css = protoboard.css.pre.concat(depcsss).concat(protoboard.css.post);
+  };
+
+  Assets.prototype._processAsset = function (root_if_no_component, record) {
     if (!record) {
+      console.trace();
       console.log('cannot _processAsset, no record!');
       process.exit(0);
     }
@@ -23,6 +36,7 @@ function createAssetHandling (lib, Node, globalutil) {
       dest_path:null,
       resolved: false
     },
+      realret = {},
       mydistro = this.reader.distro,
       mydevel = this.reader.devel,
       mycwd = this.reader.cwd,
@@ -59,35 +73,49 @@ function createAssetHandling (lib, Node, globalutil) {
       }
       if (!alternative) return this.reader.error('Record invalid:'+JSON.stringify(record, null, 2));
       ret.dest_path = Path.join(root_if_no_component, record.basepath, alternative);
-      ret.src_path = mydevel ? Path.join(root_if_no_component, ret.dest_path) : globalutil.absolutizePath (mycwd, ret.dest_path);
+      ret.src_path = mydevel ? Path.join(root_if_no_component, ret.dest_path) : util.absolutizePath (mycwd, ret.dest_path);
       ret.conditional = record.conditional;
       //console.log('_prepareAsset string', ret);
-
-      return this.handleAssetsFound([ret]);
+      realret[root_if_no_component] = [ret];
+      return this._handleAssetsFound(realret);
     }else{
-      return this.prepareStringAsset(root_if_no_component, record, ret);
+      return this._prepareStringAsset(root_if_no_component, record, ret);
     }
   }
-  Assets.prototype.prepareStringAsset = function (root_if_no_component, assetstring) {
-    /*
-    var ap = new StringAssetPreparator(this.reader, assetstring, root_if_no_component),
-      ret = ap.go();
-    ap.destroy();
-    return this.handleAssetsFound(ret);
-    */
-    return this.handleAssetsFound((new StringAssetPreparator(this.reader, assetstring, root_if_no_component)).go());
+  Assets.prototype._prepareStringAsset = function (root_if_no_component, assetstring) {
+    return this._handleAssetsFound((stringAssetPreparatorFactory(this.reader, assetstring, root_if_no_component)).go());
   };
 
-  Assets.prototype.handleAssetsFound = function (assets) {
-    assets.forEach(this.handleAssetFound.bind(this));
+  Assets.prototype._handleAssetsFound = function (assets) {
+    if (lib.isArray(assets)) {
+      this._assetsForEacher(assets);
+    } else {
+      lib.traverseShallow(this._assetsForEacher.bind(this));
+    }
     return assets;
   };
 
-  Assets.prototype.handleAssetFound = function (asset) {
+  Assets.prototype._assetsForEacher = function (assets, type) {
+    assets.forEach(this._handleAssetFound.bind(this));
+  };
+
+  Assets.prototype._handleAssetFound = function (asset) {
     if (asset.component) {
       this.reader._requireComponent(asset.component);
     }
   };
+
+  function stringAssetPreparatorFactory (reader, assetstring, root_if_no_component) {
+    assetstring = util.recognizeModule(assetstring);
+    switch(root_if_no_component) {
+      case 'js':
+        return new JSStringAssetPreparator(reader, assetstring);
+      case 'css':
+        return new CSSStringAssetPreparator(reader, assetstring);
+      default:
+        throw new Error('Asset processing pass '+root_if_no_component+' not recognized');
+    }
+  }
 
   return Assets;
 }

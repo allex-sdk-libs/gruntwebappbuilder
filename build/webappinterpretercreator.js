@@ -66,7 +66,7 @@ function createPBWebAppInterpreter (Lib, Node) {
     var config = {
       html_template: page_grunt.template,
       symlink: {
-        pages : {files:  page_grunt.html}
+        pages : {files: page_grunt.html}
       },
       jshint:{},
       exec: {
@@ -196,7 +196,7 @@ function createPBWebAppInterpreter (Lib, Node) {
     }
 
     tasklist.push ('exec:clean');
-    //console.log(require('util').inspect(config, {depth:8, colors:true}));
+    console.log(require('util').inspect(config, {depth:8, colors:true}));
     grunt.initConfig(config);
     grunt.registerTask('default', tasklist);
     return Lib.q(true);

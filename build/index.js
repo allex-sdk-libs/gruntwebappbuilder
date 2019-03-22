@@ -1,7 +1,7 @@
-function createBuild (Lib, Node, ModuleRecognizerSync) {
+function createBuild (Lib, Node, globalutil) {
   'use strict';
 
-  var util = require('./utilcreator')(Lib, Node),
+  var util = Lib.extend(require('./utilcreator')(Lib, Node), globalutil),
     Component = require('allex_protoboardhelperssdklib')(Lib),
     AppBuilder = require('./appbuildercreator')(Lib, Node, util),
     Interpreter = require('./webappinterpretercreator')(Lib, Node),

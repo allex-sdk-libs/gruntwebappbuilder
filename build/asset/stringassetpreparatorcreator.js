@@ -8,14 +8,13 @@ function createStringAssetPreparator (lib, Node) {
     protoboardAt = util.protoboardAt,
     nextWalkStep = util.nextWalkStep;
 
-  function StringAssetPreparator (reader, assetstring, root_if_no_component) {
+  function StringAssetPreparator (reader, assetstring) {
     this.reader = reader;
     this.assetpath = assetstring.split('/');
     this.destpath = this.assetpath.slice();
     this.walkpath = [this.reader.cwd];
     this.modulepath = null;
     this.moduledistpath = null;
-    this.rootIfNoComponent = root_if_no_component;
     this.didInstall = false;
     this.componentName = null;
   }
@@ -27,9 +26,8 @@ function createStringAssetPreparator (lib, Node) {
     this.didInstall = null;
     this.moduledistpath = null;
     this.modulepath = null;
-    this.rootIfNoComponent = null;
     this.walkpath = null;
-    this.distpath = null;
+    this.destpath = null;
     this.assetpath = null;
     this.reader = null;
   };
@@ -71,7 +69,8 @@ function createStringAssetPreparator (lib, Node) {
     return this.go();
   };
   StringAssetPreparator.prototype.makeAStep = function () {
-    var maybestep, testdir, tochdir;
+    var hadnopb, maybestep, testdir, tochdir;
+    hadnopb = !this.protoboard;
     maybestep = this.assetpath.shift();
     tochdir = this.walkpath[this.walkpath.length-1];
     if (Fs.dirExists(tochdir)) {
@@ -85,6 +84,9 @@ function createStringAssetPreparator (lib, Node) {
     if (testdir === process.cwd()) {
       this.reader.error('Next StringAssetPreparator walk step in '+process.cwd()+', for '+maybestep+', resulted in my same directory, walkpath up to now: '+this.walkpath.join('/')+', assetpath: '+this.assetpath.join('/'));
       this.destroy();
+    }
+    if (hadnopb && this.protoboard && this.searchGroup==='js' && lib.isArray(this.protoboard.actualtarget)) {
+      maybestep = this.handleActualTarget(maybestep);
     }
     if (testdir === maybestep) {
       this.walkpath.push(testdir);
@@ -141,7 +143,7 @@ function createStringAssetPreparator (lib, Node) {
     if (public_dirs.indexOf(fdpso) >= 0) {
       return fdpso;
     }
-    return this.rootIfNoComponent;
+    return this.searchGroup;
   };
   StringAssetPreparator.prototype.moduleDistPath = function () {
     var mdp;
@@ -161,17 +163,16 @@ function createStringAssetPreparator (lib, Node) {
       module_dist_path: this.moduleDistPath(),
       protoboard: this.protoboard,
       resolved: true
-    }, ret = [];
-    if (this.protoboard && this.protoboard.dependencies) {
-      this.protoboard.dependencies.reduce(this.digDependency.bind(this), ret);
-    };
+    },
+      ret = this.finalReturnProc(myret);
     this.destroy();
-    ret.push(myret);
     return ret;
   };
-  StringAssetPreparator.prototype.digDependency = function (result, dep) {
-    Array.prototype.push.apply(result, (new StringAssetPreparator(this.reader, dep, this.rootIfNoComponent)).go());
-    return result;
+  StringAssetPreparator.prototype.handleActualTarget = function () {
+    throw new Error('Not implemented');
+  };
+  StringAssetPreparator.prototype.finalReturnProc = function () {
+    throw new Error('Not implemented');
   };
 
 
