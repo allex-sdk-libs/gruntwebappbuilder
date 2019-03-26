@@ -1,5 +1,7 @@
-function createJSStringAssetPreparator (lib, StringAssetPreparator, factory) {
+function createJSStringAssetPreparator (lib, Node, StringAssetPreparator, factory) {
   'use strict';
+
+  var Path = Node.Path;
 
   function JSStringAssetPreparator (reader, assetstring) {
     StringAssetPreparator.call(this, reader, assetstring);
@@ -16,26 +18,43 @@ function createJSStringAssetPreparator (lib, StringAssetPreparator, factory) {
     if (this.protoboard && this.protoboard.dependencies) {
       lib.traverseShallow(this.protoboard.dependencies, this.dependencyTraverser.bind(this, ret));
     };
+    if (this.protoboard && this.protoboard.additionaltargets) {
+      lib.traverseShallow(this.protoboard.additionaltargets, this.additionalTargetTraverser.bind(this, ret));
+    };
     if (!(this.searchGroup in ret)) {
       ret[this.searchGroup] = [];
     }
     ret[this.searchGroup].push(myret);
-    if (lib.isString(this.component) && this.component.indexOf('angular1datatable')>=0) {
-      console.log(this);
-      console.log(ret);
-      process.exit(1);
-    }
     return ret;
   };
   JSStringAssetPreparator.prototype.dependencyTraverser = function (ret, deps, group) {
-    ret[group] = deps.reduce(this.digDependency.bind(this, group), []);
+    deps.reduce(this.digDependency.bind(this, false, group), ret);
   };
-  JSStringAssetPreparator.prototype.digDependency = function (group, result, dep) {
-    Array.prototype.push.apply(result, (factory(this.reader, dep, group)).go());
-    console.log(group, dep, '=>', result);
+  JSStringAssetPreparator.prototype.digDependency = function (straightforward, group, result, dep) {
+    var r, _res;
+    r = (factory(this.reader, dep, group, straightforward)).go();
+    if (lib.isArray(r)) {
+      pusher(result[group], r);
+      return result;
+    }
+    _res = result;
+    lib.traverseShallow(r, travpusher.bind(null, _res));
+    _res = null;
     return result;
   };
+  function pusher (a1, a2) {
+    Array.prototype.push.apply(a1, a2);
+  }
+  function travpusher (result, arry, name) {
+    pusher(result[name], arry);
+  }
 
+  JSStringAssetPreparator.prototype.additionalTargetTraverser = function (ret, deps, group) {
+    deps.reduce(this.digAdditionalTarget.bind(this, group), ret);
+  };
+  JSStringAssetPreparator.prototype.digAdditionalTarget = function (group, result, dep) {
+    return this.digDependency(true, group, result, Path.join(Path.join.apply(Path, this.moduledistpath), Path.join(Path.join.apply(Path, dep))));
+  };
   return JSStringAssetPreparator;
 }
 

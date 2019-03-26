@@ -4,8 +4,10 @@ function createAssetHandling (lib, Node, util) {
   var Fs = Node.Fs,
     Path = Node.Path,
     StringAssetPreparator = require('./stringassetpreparatorcreator')(lib, Node),
-    JSStringAssetPreparator = require('./jsstringassetpreparatorcreator')(lib, StringAssetPreparator, stringAssetPreparatorFactory),
-    CSSStringAssetPreparator = require('./cssstringassetpreparatorcreator')(lib, StringAssetPreparator),
+    StraightForwardStringAssetPreparatorBase = require('./straightforwardstringassetpreparatorbasecreator')(lib, StringAssetPreparator),
+    CSSStringAssetPreparator = require('./cssstringassetpreparatorcreator')(lib, StraightForwardStringAssetPreparatorBase),
+    StraightForwardJSStringAssetPreparator = require('./cssstringassetpreparatorcreator')(lib, StraightForwardStringAssetPreparatorBase),
+    JSStringAssetPreparator = require('./jsstringassetpreparatorcreator')(lib, Node, StringAssetPreparator, stringAssetPreparatorFactory),
     OriginalPBAssetsProcessorBase = require('./originalpbassetsprocessorbasecreator')(lib),
     OriginalPBJSAssetsProcessor= require('./originalpbjsassetsprocessorcreator')(lib, OriginalPBAssetsProcessorBase),
     OriginalPBCSSAssetsProcessor= require('./originalpbcssassetsprocessorcreator')(lib, OriginalPBAssetsProcessorBase);
@@ -105,11 +107,11 @@ function createAssetHandling (lib, Node, util) {
     }
   };
 
-  function stringAssetPreparatorFactory (reader, assetstring, root_if_no_component) {
-    assetstring = util.recognizeModule(assetstring);
+  function stringAssetPreparatorFactory (reader, assetstring, root_if_no_component, straightforward) {
+    assetstring = util.recognizeModule(assetstring, reader.pb_data);
     switch(root_if_no_component) {
       case 'js':
-        return new JSStringAssetPreparator(reader, assetstring);
+        return straightforward ? new StraightForwardJSStringAssetPreparator(reader, assetstring) : new JSStringAssetPreparator(reader, assetstring);
       case 'css':
         return new CSSStringAssetPreparator(reader, assetstring);
       default:

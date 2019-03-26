@@ -98,13 +98,15 @@ function createStringAssetPreparator (lib, Node) {
     return this.makeAStep();
   };
   StringAssetPreparator.prototype.doInstall = function (modulename) {
+    var installstring;
     if (!(lib.isArray(this.destpath) && this.destpath.length>0 && this.destpath[0] === 'node_modules')) {
       this.reader.error('Installing '+modulename+' via npm will do no good, because '+modulename+' will not show up in node_modules, giving up');
       return false;
     }
+    installstring = (this.reader.pb_data.installResolution && this.reader.pb_data.installResolution[modulename]) ? this.reader.pb_data.installResolution[modulename] : modulename;
     this.didInstall = modulename;
-    Node.info('npm installing '+modulename);
-    return Node.executeCommandSync('npm install --save '+modulename, {});
+    Node.info('npm installing '+modulename+(installstring!==modulename ? (' ('+installstring+')') : ''));
+    return Node.executeCommandSync('npm install --save '+installstring, {});
   };
   StringAssetPreparator.prototype.doChdir = function (dir) {
     if ((dir !== this.reader.cwd) && dirIsModuleDir(dir)) {

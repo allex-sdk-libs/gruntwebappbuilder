@@ -13,7 +13,7 @@ function createCompile (Lib, Node, recognizeModule) {
     Fs.writeFileSync (target, "<link rel='stylesheet' type='text/css' href='"+item+"'>\n", {flag:'a'});
   }
 
-  function assetFinder (rootdir, assetdir, page_name, origasset) {
+  function assetFinder (pb_data, rootdir, assetdir, page_name, origasset) {
     var asset, objasset, i;
     if (!Lib.isString(origasset)) {
       objasset = {};
@@ -21,11 +21,11 @@ function createCompile (Lib, Node, recognizeModule) {
         if (!origasset.hasOwnProperty(i)) {
           continue;
         }
-        objasset[i] = assetFinder(rootdir, assetdir, page_name, origasset[i]);
+        objasset[i] = assetFinder(pb_data, rootdir, assetdir, page_name, origasset[i]);
       }
       return origasset;
     }
-    asset = recognizeModule(origasset);
+    asset = recognizeModule(origasset, pb_data);
     if (Fs.fileExists(Path.resolve(rootdir, assetdir, page_name, asset))) {
       return Path.join(assetdir, page_name, asset);
     }
@@ -80,14 +80,14 @@ function createCompile (Lib, Node, recognizeModule) {
     if (!pb_data.pages) pb_data.pages = {};
     if (!pb_data.pages[page_name]) pb_data.pages[page_name] = {};
 
-    lscripts = lscripts.map(assetFinder.bind(null, pb_dir, 'js', page_name));
-    lcss = lcss.map(assetFinder.bind(null, pb_dir, 'css', page_name));
+    lscripts = lscripts.map(assetFinder.bind(null, pb_data, pb_dir, 'js', page_name));
+    lcss = lcss.map(assetFinder.bind(null, pb_data, pb_dir, 'css', page_name));
 
-    pb_data.pages[page_name].js = (lscripts.concat(allex_data.js.map(assetFinder.bind(null, pb_dir, 'js', page_name)))).concat(lpscripts);
-    //pb_data.pages[page_name].css= lcss.concat(allex_data.css.map(assetFinder.bind(null, pb_dir, 'css', page_name)));
+    pb_data.pages[page_name].js = (lscripts.concat(allex_data.js.map(assetFinder.bind(null, pb_data, pb_dir, 'js', page_name)))).concat(lpscripts);
+    //pb_data.pages[page_name].css= lcss.concat(allex_data.css.map(assetFinder.bind(null, pb_data, pb_dir, 'css', page_name)));
     pb_data.pages[page_name].css= {
       pre: lcss,
-      post: allex_data.css.map(assetFinder.bind(null, pb_dir, 'css', page_name))
+      post: allex_data.css.map(assetFinder.bind(null, pb_data, pb_dir, 'css', page_name))
     };
 
     var layout = pb_data.pages[page_name].layout && pb_data.pages[page_name].layout[variant] ? pb_data.pages[page_name].layout[variant] : 'designer';

@@ -1,17 +1,11 @@
-function createCSSStringAssetPreparator (lib, StringAssetPreparator) {
+function createCSSStringAssetPreparator (lib, StraightForwardStringAssetPreparatorBase) {
   'use strict';
 
   function CSSStringAssetPreparator (reader, assetstring) {
-    StringAssetPreparator.call(this, reader, assetstring);
+    StraightForwardStringAssetPreparatorBase.call(this, reader, assetstring);
   }
-  lib.inherit(CSSStringAssetPreparator, StringAssetPreparator);
+  lib.inherit(CSSStringAssetPreparator, StraightForwardStringAssetPreparatorBase);
   CSSStringAssetPreparator.prototype.searchGroup = 'css';
-  CSSStringAssetPreparator.prototype.handleActualTarget = function (maybestep) {
-    return maybestep;
-  };
-  CSSStringAssetPreparator.prototype.finalReturnProc = function (myret) {
-    return [myret];
-  };
 
   return CSSStringAssetPreparator;
 }
