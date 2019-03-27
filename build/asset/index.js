@@ -22,6 +22,8 @@ function createAssetHandling (lib, Node, util) {
   Assets.prototype.processOriginalProtoboard = function (protoboard, pagename) {
     var depcsss = (new OriginalPBJSAssetsProcessor(this, protoboard, pagename).go());
     (new OriginalPBCSSAssetsProcessor(this, protoboard, pagename, 'pre').go());
+    this._handleAssetsFound(depcsss);
+    depcsss.forEach(this.reader.conditionalAddToComponent.bind(this.reader));
     (new OriginalPBCSSAssetsProcessor(this, protoboard, pagename, 'post').go());
     protoboard.css = protoboard.css.pre.concat(depcsss).concat(protoboard.css.post);
   };
@@ -92,7 +94,7 @@ function createAssetHandling (lib, Node, util) {
     if (lib.isArray(assets)) {
       this._assetsForEacher(assets);
     } else {
-      lib.traverseShallow(this._assetsForEacher.bind(this));
+      lib.traverseShallow(assets, this._assetsForEacher.bind(this));
     }
     return assets;
   };
