@@ -118,9 +118,9 @@ function createPBWebAppInterpreter (Lib, Node) {
 
       config.symlink.js = {files:[{src:Path.resolve(this.cwd, 'js'), dest:Path.resolve(this.cwd,'_generated', 'js')}]};
       config.symlink.css= {files:[{src:Path.resolve(this.cwd, 'css'),dest:Path.resolve(this.cwd,'_generated','css')}]};
+      config.symlink.publics = {files:this.publicDirs()};
       config.symlink.partials = {files:this.symlinkPartials()};
       config.symlink.partials.files.forEach(this.require_existence.bind(this, 'dest', 'src'));
-      config.symlink.publics = {files:this.publicDirs()};
       config.symlink.roots = { files: this.symlinkRoots()};
     }else{
       var docopya = ['echo "starting file copy ..."'];
@@ -145,7 +145,7 @@ function createPBWebAppInterpreter (Lib, Node) {
       };
 
       this.required_dirs[Path.resolve(this.cwd, '_generated','css')] = true;
-      this.required_dirs[Path.resolve(this.cwd, '_generated','partials')] = true;
+      //this.required_dirs[Path.resolve(this.cwd, '_generated','partials')] = true;
       this.required_dirs[Path.resolve(this.cwd, '_generated','js')] = true;
       this.required_dirs[Path.resolve(this.cwd, '_generated','components')] = true;
     }
@@ -213,13 +213,16 @@ function createPBWebAppInterpreter (Lib, Node) {
     };
   };
 
-  function copyitempusher (devel, ret, cwd, itemroot, dest, src) {
-    var finalsrc = Path.join(itemroot, src);
-    if (Fs.dirExists(Path.resolve(cwd, finalsrc))) {
+  function copyitempusher (ret, cwd, item, dest, src) {
+    var finalsrc = Path.join(item.path, src),
+      finaldest = Path.join(item.distpath, dest);
+    if (Fs.dirExists(finalsrc)) {
       ret.push ({
         src: finalsrc,
-        dest: devel ? Path.join('_generated', dest) : dest
+        dest: finaldest
       });
+    } else {
+      throw new Error('Cannot copy from '+finalsrc);
     }
   }
 
@@ -229,30 +232,30 @@ function createPBWebAppInterpreter (Lib, Node) {
     return ret;
   };
   PBWebAppInterpreter.prototype._decideComponentsLink = function (ret,item) {
-    //console.log('_decideComponentsLink?', require('util').inspect(item, {depth:7, colors:true}));
-    if (item.protoboard && item.protoboard.copy) {
-      Lib.traverseShallow(item.protoboard.copy, copyitempusher.bind(null, true, ret, this.cwd, item.path))
+    if (!this.pbwr.devel) {
+      throw new Error('Components are not to be linked in production builds');
+      process.exit(1);
     }
     if (!item.public_dirs){
-      if (this.pbwr.devel || (!this.pbwr.devel && !item.protoboard)){
-        ret.push({
-          dest: Path.join(this.cwd, '_generated', item.distpath),
-          src: Path.join(this.cwd, item.path)
-        });
+      ret.push({
+        src: Path.join(this.cwd, item.path),
+        dest: Path.join(this.cwd, '_generated', item.distpath)
+      });
+      if (item.protoboard && item.protoboard.copy) {
+        Lib.traverseShallow(item.protoboard.copy, linker_for_copy.bind(null, ret, this.cwd, item));
       }
     }else{
-      if (this.pbwr.devel) {
-        this.required_dirs[Path.resolve(this.cwd, '_generated', 'components')] = true;
-        ret.push ({
-          src: Path.join(this.cwd, item.path),
-          dest:Path.resolve(this.cwd, '_generated', item.distpath)
-        });
-      }else{
-        this.required_dirs[Path.resolve(this.cwd, '_generated', 'components', item.name)] = true;
-        Array.prototype.push.apply(ret,item.public_dirs.map(this._componentsPublicDirs.bind(this, item)));
-      }
+      console.log(item);
+      throw new Error('public_dirs on Components are not fully resolved yet');
     }
   };
+
+  function linker_for_copy (ret, cwd, item, dest, src) {
+    ret.push({
+      src: Path.join(cwd, item.path, src),
+      dest: Path.join(cwd, '_generated', item.distpath, dest)
+    });
+  }
 
   PBWebAppInterpreter.prototype.copyComponents = function () {
     var pbwr = this.pbwr, ret = [];
@@ -260,12 +263,11 @@ function createPBWebAppInterpreter (Lib, Node) {
     return ret;
   };
   PBWebAppInterpreter.prototype._decideCopyLink = function (ret,item) {
-    console.log('_decideCopyLink?', item);
     if (this.pbwr.devel) {
       return;
     }
     if (item.protoboard && item.protoboard.copy) {
-      Lib.traverseShallow(item.protoboard.copy, copyitempusher.bind(null, false, ret, this.cwd, item.path))
+      Lib.traverseShallow(item.protoboard.copy, copyitempusher.bind(null, ret, this.cwd, item))
     }
     if (item.assets) {
       if (Lib.isArray(item.assets.js)) {
@@ -274,15 +276,11 @@ function createPBWebAppInterpreter (Lib, Node) {
         Array.prototype.push.apply(ret, item.assets.css);
       }
     }
-    //console.log('_decideComponentsLink?', require('util').inspect(item, {depth:7}));
     if (item.public_dirs){
       this.required_dirs[Path.resolve(this.cwd, '_generated', 'components', item.name)] = true;
       Array.prototype.push.apply(ret,item.public_dirs.map(this._componentsPublicDirs.bind(this, item)));
     }
   };
-  function csscopier (cssasset) {
-    console.log('cssasset', cssasset);
-  }
 
   PBWebAppInterpreter.prototype._componentsPublicDirs = function (item, dir) {
     ///TODO: not tested yet ...
@@ -322,8 +320,8 @@ function createPBWebAppInterpreter (Lib, Node) {
 
   function toSymlinkRecord(self, rec) {
     return {
-      dest: Path.resolve(self.cwd, '_generated', rec.dest_path),
-      src: Path.join(rec.src_path)
+      src: Path.join(rec.src_path),
+      dest: Path.resolve(self.cwd, '_generated', rec.dest_path)
     }
   };
 
@@ -369,7 +367,6 @@ function createPBWebAppInterpreter (Lib, Node) {
     if (rd) {
       rd.forEach(appendPublicDir.bind(null, this.pbwr.devel, ret, this.cwd));
     }
-    console.log('publicDirs', ret);
     return ret;
   };
 
