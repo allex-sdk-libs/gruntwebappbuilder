@@ -31,9 +31,9 @@ function createBuild (Lib, Node, globalutil) {
 
   function getField(field, obj) { return obj[field];}
 
-  function buildWebapp(devel, rebuild, distro, path) {
+  function buildWebapp(devel, rebuild, distro, path, symlinkinghints, verbose) {
     var jobs, job;
-    App = new AppBuilder(devel, distro, path);
+    App = new AppBuilder(devel, distro, path, symlinkinghints, verbose);
     jobs = [
       App.install.bind(App),
     ];
@@ -58,7 +58,7 @@ function createBuild (Lib, Node, globalutil) {
       //Node.executeCommand.bind(Node, params.devel ? 'allex-bower-install' : 'bower install', null, {cwd:dir}, true),
       ensurePackageJson.bind(null, dir),
       Node.executeCommand.bind(Node, 'npm install --no-package-lock --no-save', null, {cwd:dir}, true),
-      buildWebapp.bind(null, params.devel, params.rebuild, params.distro, params.pb_dir),
+      buildWebapp.bind(null, params.devel, params.rebuild, params.distro, params.pb_dir, params.symlinkinghints, params.verbose),
       buildGrunt.bind(null, grunt, params)
     ];
 

@@ -26,6 +26,11 @@ function createPBWebAppReader (Lib, Node, globalutil) {
     this.requires_connection = this.pb_data.protoboard.requires_connection;
     this.devel = ('devel' in options) ? options.devel : true;
     this.distro = ('distro' in options) ? options.distro : null;
+    this.symlinkinghints = ('symlinkinghints' in options) ? 
+      (Lib.isArray(options.symlinkinghints) ? options.symlinkinghints : [])
+      :
+      [];
+    this.verbose = options.verbose;
     this.assets = new Assets(this);
     var includes = [];
 
@@ -43,6 +48,8 @@ function createPBWebAppReader (Lib, Node, globalutil) {
   }
 
   PBWebAppReader.prototype.destroy = function () {
+    this.verbose = null;
+    this.symlinkinghints = null;
     this._references = null;
     this.components_dir = null;
     Lib.objNullAll(this.jstemplates);
@@ -527,6 +534,25 @@ function createPBWebAppReader (Lib, Node, globalutil) {
     if (!len) {
       //nothing to be done _fireIfReady will do needed ...
       return;
+    }
+  };
+
+  PBWebAppReader.prototype.trySymLinkModule = function (modulename) {
+    if (!this.devel) {
+      return false;
+    }
+    if (!Lib.isArray(this.symlinkinghints)) {
+      return false;
+    }
+    return this.symlinkinghints.some(this.trySymLinkModuleOnHint.bind(this, modulename));
+  };
+
+  PBWebAppReader.prototype.trySymLinkModuleOnHint = function (modulename, hint) {
+    var target = Path.join(hint, modulename);
+    if (Fs.dirExists(target)) {
+      Node.info('Symlinking '+target+' as '+modulename);
+      Fs.symlinkSync(target, modulename, 'dir');
+      return true;
     }
   };
 

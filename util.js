@@ -21,6 +21,14 @@ function createUtil (lib, Node, ModuleRecognizerSync) {
         installobj.installResolution[asset.modulename] = asset.npmstring;
       }
       asset = Path.join('node_modules', asset.modulename, 'dist', 'browserified.js');
+    } else {
+      if (asset &&
+        asset.indexOf(':')>0 &&
+        asset.indexOf('/')<0 &&
+        asset.indexOf('\\')<0
+      ) {
+        throw new Error ('Module recognition for '+string+' resulted in '+asset+', it is very likely that your .allexns.json needs updating');
+      }
     }
     return asset;
   }

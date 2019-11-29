@@ -79,6 +79,9 @@ function createCompile (Lib, Node, recognizeModule) {
     if (!allex_data.css) allex_data.css = [];
     if (!pb_data.pages) pb_data.pages = {};
     if (!pb_data.pages[page_name]) pb_data.pages[page_name] = {};
+    if (pb_data.installResolution) {
+      pb_data.installResolution = {};
+    }
 
     lscripts = lscripts.map(assetFinder.bind(null, pb_data, pb_dir, 'js', page_name));
     lcss = lcss.map(assetFinder.bind(null, pb_data, pb_dir, 'css', page_name));

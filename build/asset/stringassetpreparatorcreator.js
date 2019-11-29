@@ -51,7 +51,9 @@ function createStringAssetPreparator (lib, Node) {
         return null;
       }
       //console.log('will install because', testcommand, 'failed in', process.cwd(), 'for', testdir);
-      if (!this.doInstall(testdir)) {
+      if (this.reader.trySymLinkModule(testdir)) {
+        this.didInstall = testdir;
+      } else if (!this.doInstall(testdir)) {
         return null;
       }
       if (!Fs[testcommand](testdir)) { //installation did not give me the needed testdir

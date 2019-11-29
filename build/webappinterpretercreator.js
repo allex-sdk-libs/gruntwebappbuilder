@@ -196,7 +196,10 @@ function createPBWebAppInterpreter (Lib, Node) {
     }
 
     tasklist.push ('exec:clean');
-    console.log(require('util').inspect(config, {depth:8, colors:true}));
+    if (this.pbwr.verbose) {
+      Node.info('The complete Grunt configuration object:');
+      console.log(require('util').inspect(config, {depth:8, colors:true}));
+    }
     grunt.initConfig(config);
     grunt.registerTask('default', tasklist);
     return Lib.q(true);
